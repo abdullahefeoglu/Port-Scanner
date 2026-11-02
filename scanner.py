@@ -30,10 +30,29 @@ def syn_scan_range(target_ip,ports):
 def parse_args():
     parser = argparse.ArgumentParser(description="TCP SYN Scan")
     parser.add_argument("target_ip", help="Target IP address")
-    parser.add_argument("-p", "--ports", help="Comma-separated list of ports to scan", required=True)
+    parser.add_argument("-p", "--ports", help="Ports or port ranges (e.g. 80,443,1-1000)", required=True)
     args = parser.parse_args()
 
-    ports = [int(port) for port in args.ports.split(",")]
+    ports = []
+    port_groups = args.ports.split(",")
+
+    for group in port_groups:
+        if "-" in group:
+            start, end = group.split("-")
+
+            start = int(start)
+            end = int(end)
+
+            if start > end:
+                parser.error("Start port cannot be greater than end port")
+
+            ports.extend(range(start,end + 1))
+        else:
+            ports.append(int(group))
+
+    if any(port < 1 or port > 65535 for port in ports):
+        parser.error("Ports must be between 1 and 65535")
+
     return args.target_ip, ports
 
 if __name__ == "__main__":
